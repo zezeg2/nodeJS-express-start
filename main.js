@@ -8,6 +8,18 @@ const template = require('./lib/template.js')
 const app = express()
 const port = 3000
 
+// middle ware - Third-party module
+var bodyParser = require('body-parser')
+var compression = require('compression')
+
+
+
+// attatch to app Third-party module
+app.use(bodyParser.urlencoded({
+	extended: false
+}))
+app.use(compression())
+
 app.get('/', (req, res) => {
 	fs.readdir('./data', (error, filelist) => {
 		var title = 'Welcome'
@@ -69,21 +81,18 @@ app.get('/create', (req, res) => {
 })
 
 app.post('/create_process', (req, res) => {
-	var body = ''
-	req.on('data', (data) => {
-		body = body + data
-	})
-	req.on('end', () => {
-		var post = qs.parse(body)
-		var title = post.title
-		var description = post.description
-		fs.writeFile(`data/${title}`, description, 'utf8', (err) => {
-			res.writeHead(302, {
-				Location: `/?id=${title}`
-			})
-			res.end()
+
+	var post = req.body
+	var title = post.title
+	var description = post.description
+	fs.writeFile(`data/${title}`, description, 'utf8', (err) => {
+		res.writeHead(302, {
+			Location: `/?id=${title}`
 		})
+		res.end()
 	})
+
+
 })
 
 app.get('/update/:pageId', (req, res) => {
@@ -132,18 +141,13 @@ app.post('/update_process', (req, res) => {
 })
 
 app.post('/page/delete_process', (req, res) => {
-	var body = ''
-	req.on('data', (data) => {
-		body = body + data
-	})
-	req.on('end', () => {
-		var post = qs.parse(body)
-		var id = post.id
-		var filteredId = path.parse(id).base
-		fs.unlink(`data/${filteredId}`, (error) => {
-			res.redirect('/')
 
-		})
+	var post = req.body
+	var id = post.id
+	var filteredId = path.parse(id).base
+	fs.unlink(`data/${filteredId}`, (error) => {
+		res.redirect('/')
+
 	})
 })
 
