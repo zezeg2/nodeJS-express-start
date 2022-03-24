@@ -17,6 +17,7 @@ app.get('*',(req, res, next) => {
 })
 
 // middle ware - Third-party module
+app.use(express.static('public'));
 var bodyParser = require('body-parser')
 var compression = require('compression')
 
@@ -33,7 +34,8 @@ app.get('/', (req, res) => {
 	var description = 'Hello, Node.js'
 	var list = template.list(req.list)
 	var html = template.HTML(title, list,
-		`<h2>${title}</h2>${description}`,
+		`<h2>${title}</h2>${description}
+		<img src="/images/hello.jpeg" style="width: 300px; display: block; margin-top: 10px;">`,
 		`<a href="/create">create</a>`
 	)
 	res.writeHead(200)
