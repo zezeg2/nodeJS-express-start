@@ -8,6 +8,14 @@ const template = require('./lib/template.js')
 const app = express()
 const port = 3000
 
+// custom middle-ware
+app.use((req, res, next) => {
+	fs.readdir('./data', (err, filelist) => {
+		req.list = filelist
+		next()
+	})
+})
+
 // middle ware - Third-party module
 var bodyParser = require('body-parser')
 var compression = require('compression')
@@ -21,51 +29,51 @@ app.use(bodyParser.urlencoded({
 app.use(compression())
 
 app.get('/', (req, res) => {
-	fs.readdir('./data', (error, filelist) => {
-		var title = 'Welcome'
-		var description = 'Hello, Node.js'
-		var list = template.list(filelist)
-		var html = template.HTML(title, list,
-			`<h2>${title}</h2>${description}`,
-			`<a href="/create">create</a>`
-		)
-		res.writeHead(200)
-		res.end(html)
-	})
+
+	var title = 'Welcome'
+	var description = 'Hello, Node.js'
+	var list = template.list(req.list)
+	var html = template.HTML(title, list,
+		`<h2>${title}</h2>${description}`,
+		`<a href="/create">create</a>`
+	)
+	res.writeHead(200)
+	res.end(html)
+
 
 })
 
 app.get('/page/:pageId', (req, res) => {
-	fs.readdir('./data', (error, filelist) => {
-		var filteredId = path.parse(req.params.pageId).base
-		fs.readFile(`data/${filteredId}`, 'utf8', (err, description) => {
-			var title = req.params.pageId
-			var sanitizedTitle = sanitizeHtml(title)
-			var sanitizedDescription = sanitizeHtml(description, {
-				allowedTags: ['h1']
-			})
-			var list = template.list(filelist)
-			var html = template.HTML(sanitizedTitle, list,
-				`<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-				` <a href="/create">create</a>
+
+	var filteredId = path.parse(req.params.pageId).base
+	fs.readFile(`data/${filteredId}`, 'utf8', (err, description) => {
+		var title = req.params.pageId
+		var sanitizedTitle = sanitizeHtml(title)
+		var sanitizedDescription = sanitizeHtml(description, {
+			allowedTags: ['h1']
+		})
+		var list = template.list(req.list)
+		var html = template.HTML(sanitizedTitle, list,
+			`<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+			` <a href="/create">create</a>
 			  <a href="/update/${sanitizedTitle}">update</a>
 			  <form action="delete_process" method="post">
 				<input type="hidden" name="id" value="${sanitizedTitle}">
 				<input type="submit" value="delete">
 			  </form>`
-			)
+		)
 
-			res.send(html)
-		})
+		res.send(html)
 	})
+
 })
 
 
 app.get('/create', (req, res) => {
-	fs.readdir('./data', (error, filelist) => {
-		var title = 'WEB - create'
-		var list = template.list(filelist)
-		var html = template.HTML(title, list, `
+
+	var title = 'WEB - create'
+	var list = template.list(req.list)
+	var html = template.HTML(title, list, `
           <form action="/create_process" method="post">
             <p><input type="text" name="title" placeholder="title"></p>
             <p>
@@ -76,8 +84,8 @@ app.get('/create', (req, res) => {
             </p>
           </form>
         `, '')
-		res.send(html)
-	})
+	res.send(html)
+
 })
 
 app.post('/create_process', (req, res) => {
@@ -96,13 +104,13 @@ app.post('/create_process', (req, res) => {
 })
 
 app.get('/update/:pageId', (req, res) => {
-	fs.readdir('./data', (error, filelist) => {
-		var filteredId = path.parse(req.params.pageId).base
-		fs.readFile(`data/${filteredId}`, 'utf8', (err, description) => {
-			var title = req.params.pageId
-			var list = template.list(filelist)
-			var html = template.HTML(title, list,
-				`
+
+	var filteredId = path.parse(req.params.pageId).base
+	fs.readFile(`data/${filteredId}`, 'utf8', (err, description) => {
+		var title = req.params.pageId
+		var list = template.list(req.list)
+		var html = template.HTML(title, list,
+			`
             <form action="/update_process" method="post">
               <input type="hidden" name="id" value="${title}">
               <p><input type="text" name="title" placeholder="title" value="${title}"></p>
@@ -114,12 +122,12 @@ app.get('/update/:pageId', (req, res) => {
               </p>
             </form>
             `,
-				`<a href="/create">create</a> <a href="/update/${title}">update</a>`
-			)
-			res.send(html)
-		})
+			`<a href="/create">create</a> <a href="/update/${title}">update</a>`
+		)
+		res.send(html)
 	})
 })
+
 
 app.post('/update_process', (req, res) => {
 	var body = ''
