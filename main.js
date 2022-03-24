@@ -9,7 +9,7 @@ const app = express()
 const port = 3000
 
 // custom middle-ware
-app.get('*',(req, res, next) => {
+app.get('*', (req, res, next) => {
 	fs.readdir('./data', (err, filelist) => {
 		req.list = filelist
 		next()
@@ -17,7 +17,7 @@ app.get('*',(req, res, next) => {
 })
 
 // middle ware - Third-party module
-app.use(express.static('public'));
+app.use(express.static('public')); //static file hosting
 var bodyParser = require('body-parser')
 var compression = require('compression')
 
@@ -44,27 +44,30 @@ app.get('/', (req, res) => {
 
 })
 
-app.get('/page/:pageId', (req, res) => {
+app.get('/page/:pageId', (req, res, next) => {
 
 	var filteredId = path.parse(req.params.pageId).base
 	fs.readFile(`data/${filteredId}`, 'utf8', (err, description) => {
-		var title = req.params.pageId
-		var sanitizedTitle = sanitizeHtml(title)
-		var sanitizedDescription = sanitizeHtml(description, {
-			allowedTags: ['h1']
-		})
-		var list = template.list(req.list)
-		var html = template.HTML(sanitizedTitle, list,
-			`<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-			` <a href="/create">create</a>
+		if (!err) {
+			var title = req.params.pageId
+			var sanitizedTitle = sanitizeHtml(title)
+			var sanitizedDescription = sanitizeHtml(description, {
+				allowedTags: ['h1']
+			})
+			var list = template.list(req.list)
+			var html = template.HTML(sanitizedTitle, list,
+				`<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+				` <a href="/create">create</a>
 			  <a href="/update/${sanitizedTitle}">update</a>
 			  <form action="delete_process" method="post">
 				<input type="hidden" name="id" value="${sanitizedTitle}">
 				<input type="submit" value="delete">
 			  </form>`
-		)
+			)
 
-		res.send(html)
+			res.send(html)
+		}
+		next(err)
 	})
 
 })
@@ -159,6 +162,17 @@ app.post('/page/delete_process', (req, res) => {
 
 	})
 })
+
+// 404에러 처리
+app.use((req, res, next) => {
+	res.status(404).send('Sorry cant find that!');
+});
+
+// 에러 핸들링 middle-ware(4 args)
+app.use((err, req, res, next)=> {
+	console.error(err.stack);
+	res.status(500).send('Something broke!');
+  });
 
 
 
