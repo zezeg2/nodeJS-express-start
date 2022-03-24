@@ -21,6 +21,7 @@ app.get('*', (req, res, next) => {
 app.use(express.static('public')); //static file hosting
 var bodyParser = require('body-parser')
 var compression = require('compression')
+const { default: helmet } = require('helmet')
 
 
 // attatch to app Third-party module
@@ -28,6 +29,7 @@ app.use(bodyParser.urlencoded({
 	extended: false
 }))
 app.use(compression())
+app.use(helmet())
 
 
 app.use('/', indexRouter)
